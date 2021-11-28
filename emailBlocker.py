@@ -37,6 +37,8 @@ msg = ""
 BaseURL = 'https://blockthis.forge.name/blocker?blockthis='
 
 def mydb(host=None, user=None, password=None, database=None):
+	#	Description:	Creates a conn to a mysql database
+	# 	Returns: 		mysql db connection object
     try:
         conn = mysql.connector.connect(
                 host=host,
@@ -46,16 +48,18 @@ def mydb(host=None, user=None, password=None, database=None):
             )
         return conn
     except:
-        print(f'Unable to connect to {username}@{host} on database: {database} with password: {password}')
+        print(f'Unable to connect to {username=}@{host=} on database: {database=} with password: {password=}')
         return 1
 
-def genRandStr(length):
-	"""Generate a random string"""
+def genRandStr(length=)1:
+	# 	Description:	Generate a random, alpha-numeric string of a given length
+	#	Returns:		a random string of a given length
 	str = string.ascii_lowercase + string.ascii_uppercase + "1234567890"
 	return ''.join(random.choice(str) for i in range(length))
 
 def genRESTLink(emailAddress, BaseURL):
-	# This needs to actually create a link on the web server or something but for now it just returns the email address and a REST URL
+	# 	Description:	This needs to actually create a link on the web server or something but for now it just returns the email address and a REST URL
+	#	Returns: tuple(emailaddrss, web link)
 	randstr = genRandStr(12)
 	endpoint = createWebServerCrap(emailAddress, randstr)
 	RESTLink = BaseURL + endpoint
@@ -84,16 +88,18 @@ def genRESTLink(emailAddress, BaseURL):
 
 
 def createWebServerCrap(email, randomstring):
-    # Basically this puts info into a database that is used by PHP for a URL
-    # The database has the email address (encrytpted), a random string to be matched,
-    # and a column for block (basically true or false).
-    # This Function will set the database entry (encrytped email address, random string, and block=false) and
-    # will provide back an encoded values of the encrypted email address + random string.
-    # That encoded string is attached to a URL that is picked up by a PHP script.
-    # The PHPO script only does a few things:
-    # 1. Decodes the URL and does a lookup ion the random string.
-    # 2. If the random string exists then decrypt email and flip the value of the block column
-    #       If the random string does not exist then log a possible bad IP for further system analysis
+	#	Description:	This needs a major overhaul and does not really work!!!!
+	#	What I want is to basically for this put info into a database that is used by PHP for a URL
+		# The database has the email address (encrytpted), a random string to be matched,
+		# and a column for block (basically true or false).
+		# This Function will set the database entry (encrytped email address, random string, and block=false) and
+		# will provide back an encoded values of the encrypted email address + random string.
+		# That encoded string is attached to a URL that is picked up by a PHP script.
+		# The PHPO script only does a few things:
+		# 1. Decodes the URL and does a lookup ion the random string.
+		# 2. If the random string exists then decrypt email and flip the value of the block column
+		# 	If the random string does not exist then log a possible bad IP for further system analysis
+	#	Returns:	Something... I don't know yet
 
     publickey, privatekey = rsa.newkeys(1024)
     encMessage = rsa.encrypt(email.encode(), privatekey)
@@ -116,9 +122,10 @@ def createWebServerCrap(email, randomstring):
     return encodedB64_final
 
 def genEmailList(msgobj):
-	# Returns a list of all email addresses in an email msgobj
-	#	The msgobj needs to be of the "email" import module
-	# Take note that this onklhy looks for "to" and "cc" filed (the values are made case insensitive)
+	# Description:	Generates a list of all email addresses in an email msgobj
+	#					The msgobj needs to be of the "email" import module
+	#					Take note that this onkly looks for "to" and "cc" filed (the values are made case insensitive)
+	# Returns:	A list object with email addresses
 	emailsToBlock = ""
 	emailRegEx = r"([a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+)"
 	emailAddresses = []
@@ -134,6 +141,8 @@ def genEmailList(msgobj):
 	return emailAddresses
 
 def genRESTLinkList(emailList):
+	#	Description:	Generates a REST link for each email in a given list object
+	#	Returns:	List object of rest links
 	RESTLinksList = []
 	
 	for emailAddress in emailList:
@@ -143,6 +152,11 @@ def genRESTLinkList(emailList):
 	return RESTLinksList
 
 def genNewPartText(payload, RESTLinks):
+	#	Description: 	As part of an email body, there can be text parts and non-text parts
+	#					This function adds a REST link to the top of a text part of an email
+	#	Input:			"payload" is a text string
+	#					"RESTLinks" is a list object of tuples
+	#	Returns:		A string that has the REST links at the begining of the text
 	payload = "\n********************************************************************************\n" + payload
 	for RESTLink in RESTLinks:
 		payload = f"********** Block {RESTLink[0]}: {RESTLink[1]} **********\n" + payload
@@ -151,6 +165,12 @@ def genNewPartText(payload, RESTLinks):
 	return payload
 
 def genNewPartHTML(payload, RESTLinks):
+	#	Description: 	As part of an email body, there can be html parts (duh)
+	#					This function adds a REST link to the top of an html part of an email
+	#	Input:			"payload" is a text string
+	#					"RESTLinks" is a list object of tuples
+	#	Uses:			BeautifulSoup
+	#	Returns:		A string that has the REST links at the begining of the text
 
 	soup = BeautifulSoup(payload, 'html.parser')
 	bodytag = soup.body
@@ -192,7 +212,13 @@ def base64encode(data, urlsafe=False):
     return encodedStr
 
 def walkParts(msgobj, RESTLinks):
-	# Note: when doing "part.set_payload()", this automagically sets it into the msgobj
+	# Description:	Walks through a message object (from mopdule email) and determins if a part is a worthy of adding
+	#				an eamil blocker link
+	#				As of writing this (November 2021), only text/plain and text/html seem to matter.
+	#				This could change as different email types are determined
+	# 				Note: when doing "part.set_payload()", this automagically sets it into the msgobj
+	# Uses:			Module "email"
+	# Returns:		A message object -- presumably to be of object "email"
 
 	for part in msgobj.walk():
 		contenttype = part.get_content_type()
